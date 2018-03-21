@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 # Entitlements is not in CMS' INSTALLED_APPS so these imports will error during test collection
 if settings.ROOT_URLCONF == 'lms.urls':
     from entitlements.tests.factories import CourseEntitlementFactory
-    from entitlements.models import CourseEntitlement
+    from entitlements.models import CourseEntitlement, CourseEntitlementPolicy
     from entitlements.api.v1.serializers import CourseEntitlementSerializer
 
 
@@ -55,6 +55,18 @@ class EntitlementViewSetTest(ModuleStoreTestCase):
             "course_uuid": course_uuid,
             "order_number": "EDX-1001",
         }
+
+    def _assert_default_policy(self, policy):
+        """
+        Assert that a policy is equal to the default Course Entitlement Policy.
+        """
+        default_policy = CourseEntitlementPolicy()
+        assert (
+            policy.expiration_period == default_policy.expiration_period
+            and policy.refund_period == default_policy.refund_period
+            and policy.regain_period == default_policy.regain_period
+            and policy.mode == default_policy.mode
+        )
 
     def test_auth_required(self):
         self.client.logout()
@@ -123,6 +135,70 @@ class EntitlementViewSetTest(ModuleStoreTestCase):
             course_uuid=course_uuid
         )
         assert results == CourseEntitlementSerializer(course_entitlement).data
+
+    def test_default_policy(self):
+        """
+        Verify that, when no course entitlement policy is found with the same mode and site
+        as the created entitlement, the default policy is used for the entitlement.
+        """
+        course_uuid = uuid.uuid4()
+        entitlement_data = self._get_data_set(self.user, str(course_uuid))
+
+        self.client.post(
+            self.entitlements_list_url,
+            data=json.dumps(entitlement_data),
+            content_type='application/json',
+        )
+
+        course_entitlement = CourseEntitlement.objects.get(
+            user=self.user,
+            course_uuid=course_uuid
+        )
+        self._assert_default_policy(course_entitlement.policy)
+
+    def test_set_custom_policy_on_create(self):
+        """
+        Verify that, when there exists a course entitlement policy with the same mode and site
+        as the created entitlement, that policy is assigned to the entitlement.
+        """
+        policy = CourseEntitlementPolicy.objects.create(mode=CourseMode.PROFESSIONAL)
+        course_uuid = uuid.uuid4()
+        entitlement_data = self._get_data_set(self.user, str(course_uuid))
+        entitlement_data['mode'] = CourseMode.PROFESSIONAL
+
+        self.client.post(
+            self.entitlements_list_url,
+            data=json.dumps(entitlement_data),
+            content_type='application/json',
+        )
+
+        course_entitlement = CourseEntitlement.objects.get(
+            user=self.user,
+            course_uuid=course_uuid
+        )
+        assert course_entitlement.policy == policy
+
+    def test_professional_policy_for_no_id_professional(self):
+        """
+        Verify that when there exists a policy with a professional mode that it is assigned
+        to new entitlements with the mode no-id-professional.
+        """
+        policy = CourseEntitlementPolicy.objects.create(mode=CourseMode.PROFESSIONAL)
+        course_uuid = uuid.uuid4()
+        entitlement_data = self._get_data_set(self.user, str(course_uuid))
+        entitlement_data['mode'] = CourseMode.NO_ID_PROFESSIONAL_MODE
+
+        self.client.post(
+            self.entitlements_list_url,
+            data=json.dumps(entitlement_data),
+            content_type='application/json',
+        )
+
+        course_entitlement = CourseEntitlement.objects.get(
+            user=self.user,
+            course_uuid=course_uuid
+        )
+        assert course_entitlement.policy == policy
 
     def test_add_entitlement_with_support_detail(self):
         """

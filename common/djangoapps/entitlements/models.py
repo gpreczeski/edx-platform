@@ -9,8 +9,10 @@ from django.contrib.sites.models import Site
 from django.db import models
 from django.db import transaction
 from django.utils.timezone import now
+from model_utils import Choices
 from model_utils.models import TimeStampedModel
 
+from course_modes.models import CourseMode
 from lms.djangoapps.certificates.models import GeneratedCertificate
 from openedx.core.djangoapps.catalog.utils import get_course_uuid_for_course
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
@@ -30,6 +32,8 @@ class CourseEntitlementPolicy(models.Model):
     DEFAULT_EXPIRATION_PERIOD_DAYS = 730
     DEFAULT_REFUND_PERIOD_DAYS = 60
     DEFAULT_REGAIN_PERIOD_DAYS = 14
+    DEFAULT_ENROLLMENT_MODE = CourseMode.VERIFIED
+    MODES = Choices(DEFAULT_ENROLLMENT_MODE, CourseMode.PROFESSIONAL)
 
     # Use a DurationField to calculate time as it returns a timedelta, useful in performing operations with datetimes
     expiration_period = models.DurationField(
@@ -49,6 +53,7 @@ class CourseEntitlementPolicy(models.Model):
         null=False
     )
     site = models.ForeignKey(Site)
+    mode = models.CharField(max_length=32, choices=MODES, default=DEFAULT_ENROLLMENT_MODE)
 
     def get_days_until_expiration(self, entitlement):
         """
@@ -131,11 +136,12 @@ class CourseEntitlementPolicy(models.Model):
                 and not entitlement.expired_at)
 
     def __unicode__(self):
-        return u'Course Entitlement Policy: expiration_period: {}, refund_period: {}, regain_period: {}'\
+        return u'Course Entitlement Policy: expiration_period: {}, refund_period: {}, regain_period: {}, mode: {}'\
             .format(
                 self.expiration_period,
                 self.refund_period,
                 self.regain_period,
+                self.mode
             )
 
 

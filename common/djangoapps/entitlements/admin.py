@@ -72,4 +72,5 @@ class CourseEntitlementPolicyAdmin(admin.ModelAdmin):
     list_display = ('expiration_period',
                     'refund_period',
                     'regain_period',
+                    'mode',
                     'site')

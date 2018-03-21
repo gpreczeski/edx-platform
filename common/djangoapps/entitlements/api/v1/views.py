@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from entitlements.api.v1.filters import CourseEntitlementFilter
 from entitlements.api.v1.permissions import IsAdminOrSupportOrAuthenticatedReadOnly
 from entitlements.api.v1.serializers import CourseEntitlementSerializer
-from entitlements.models import CourseEntitlement, CourseEntitlementSupportDetail
+from entitlements.models import CourseEntitlement, CourseEntitlementPolicy, CourseEntitlementSupportDetail
 from entitlements.utils import is_course_run_entitlement_fulfillable
 from lms.djangoapps.commerce.utils import refund_entitlement
 from openedx.core.djangoapps.catalog.utils import get_course_runs_for_course
@@ -101,6 +101,18 @@ class EntitlementViewSet(viewsets.ModelViewSet):
     filter_class = CourseEntitlementFilter
     pagination_class = EntitlementsPagination
 
+    def set_policy(self, entitlement, site):
+        """
+        Find the appropriate Course Entitlement Policy for the mode and site of the entitlement and assign it to the
+        Course Entitlement, otherwise it assigns the default policy to the Course Entitlement.
+        """
+        policy_mode = entitlement.mode
+        if policy_mode == CourseMode.NO_ID_PROFESSIONAL_MODE:
+            policy_mode = CourseMode.PROFESSIONAL
+        policy = CourseEntitlementPolicy.objects.filter(mode=policy_mode).first()
+        entitlement.policy = policy if policy else None
+        entitlement.save()
+
     def get_queryset(self):
         user = self.request.user
 
@@ -127,6 +139,7 @@ class EntitlementViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
 
         entitlement = serializer.instance
+        self.set_policy(entitlement.mode, request.site)
 
         if support_details:
             for support_detail in support_details:

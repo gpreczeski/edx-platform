@@ -45,9 +45,6 @@
 
             this.defaultSortKey = 'activity';
             this.defaultSortOrder = 'desc';
-
-            // Discussions are open by default when the page loads.
-            this.toggleDiscussion();
         },
 
         loadDiscussions: function($elem, error) {

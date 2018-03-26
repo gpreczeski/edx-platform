@@ -88,7 +88,7 @@
                                         courseNumber, courseName, enrollmentMode, showRefundOption, courseKey) {
              // This flag is added for REV-19 experiment
              var auditRefundableCourses = (window.experimentVariables || {}).auditRefundableCourses,
-                 courseInExperiment = courseKey.indexOf(auditRefundableCourses) > 0,
+                 courseInExperiment = auditRefundableCourses.indexOf(courseKey) > -1,
                  diagAttr = {};
 
              if (isPaidCourse || courseInExperiment) {

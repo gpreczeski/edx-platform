@@ -138,9 +138,7 @@ class CourseOutlinePage(PageObject):
         """
         Return the number of units in the first subsection
         """
-        subsections = self._get_subsections_as_selenium_webelements()
-        units = self._get_units(subsections[0])
-        return len(units)
+        return len(self.q(css='.sequence-list-wrapper ol li'))
 
     def go_to_section(self, section_title, subsection_title):
         """
@@ -297,6 +295,7 @@ class CourseOutlinePage(PageObject):
         section_button_selector = '.section-name.accordion-trigger'
         subsection_button_selector = '.subsection-text.accordion-trigger'
 
+        # print self.q(css='html').results[0].get_attribute('innerHTML').encode('utf8')
         self.wait_for_element_presence(
             section_button_selector, 'Waiting for outline to load sections.', timeout=10)
         sections = self.q(css=section_button_selector)

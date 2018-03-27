@@ -19,6 +19,8 @@ from eventtracking import tracker
 from openedx.core.djangoapps.request_cache import clear_cache, get_cache
 from openedx.core.djangoapps.request_cache.middleware import request_cached
 from student.models import get_user_by_username_or_email
+from xmodule.course_module import CourseDescriptor
+from xmodule.error_module import ErrorDescriptor
 
 from .models import (
     CohortMembership,
@@ -281,6 +283,12 @@ def get_random_cohort(course_key):
     If there are no existing cohorts of type RANDOM in the course, one will be created.
     """
     course = courses.get_course(course_key)
+    if not isinstance(course, CourseDescriptor):
+        log.error(
+            "COURSE_LOADING_ERROR: Error while loading course {} from the module store: {}",
+            unicode(course_key),
+            course.error_msg if isinstance(course, ErrorDescriptor) else unicode(course)
+        )
     cohorts = get_course_cohorts(course, assignment_type=CourseCohort.RANDOM)
     if cohorts:
         cohort = local_random().choice(cohorts)

@@ -19,6 +19,7 @@ from six import text_type
 from course_modes.models import CourseMode
 from enrollment import api
 from enrollment.errors import CourseEnrollmentError, CourseEnrollmentExistsError, CourseModeNotFoundError
+from experiments.models import ExperimentData, ExperimentKeyValue
 from openedx.core.djangoapps.cors_csrf.authentication import SessionAuthenticationCrossDomainCsrf
 from openedx.core.djangoapps.cors_csrf.decorators import ensure_csrf_cookie_cross_domain
 from openedx.core.djangoapps.embargo import api as embargo_api
@@ -668,6 +669,17 @@ class EnrollmentListView(APIView, ApiKeyPermissionMixIn):
             if email_opt_in is not None:
                 org = course_id.org
                 update_email_opt_in(request.user, org, email_opt_in)
+            else:
+                # This code is for REV-19 to handle the opt in flag
+                try:
+                    opt_in = ExperimentData.objects.get(
+                        user=request.user,
+                        experiment_id=9,
+                        key=unicode(course_id),
+                    )
+                    update_email_opt_in(request.user, course_id.org, email_opt_in)
+                except ExperimentData.DoesNotExist:
+                    pass
 
             log.info('The user [%s] has already been enrolled in course run [%s].', username, course_id)
             return Response(response)

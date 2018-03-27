@@ -376,10 +376,11 @@ class CourseWaffleFlag(WaffleFlag):
             course_key (CourseKey): The course to check for override before
             checking waffle.
         """
-        # validate arguments
-        assert issubclass(type(course_key), CourseKey), "The course_key '{}' must be a CourseKey.".format(
-            str(course_key)
-        )
+        if course_key is not None:
+            # validate arguments
+            assert issubclass(type(course_key), CourseKey), "The course_key '{}' must be a CourseKey.".format(
+                str(course_key)
+            )
 
         return self.waffle_namespace.is_flag_active(
             self.flag_name,

@@ -1,5 +1,5 @@
 <div class="form-field <%- type %>-<%- name %>">
-    <% if ( type !== 'checkbox' ) { %>
+    <% if ( type !== 'checkbox' && type !== 'plaintext') { %>
         <label for="<%- form %>-<%- name %>">
             <span class="label-text"><%- label %></span>
             <% if ( required && type !== 'hidden' ) { %>
@@ -74,6 +74,8 @@
                 <a href="<%- supplementalLink %>" target="_blank"><%- supplementalText %></a>
             </div>
         <% } %>
+    <% } else if (type === 'plaintext' ) { %>
+            <span class="plaintext-field"><%= label %></span>
     <% } else { %>
         <% if ( type === 'checkbox' ) { %>
             <% if (supplementalLink && supplementalText) { %>
@@ -116,6 +118,7 @@
                 <% } %>
             </label>
         <% } %>
+
         <span id="<%- form %>-<%- name %>-validation-error" class="tip error" aria-live="assertive">
             <span class="sr-only">ERROR: </span>
             <span id="<%- form %>-<%- name %>-validation-error-msg"></span>

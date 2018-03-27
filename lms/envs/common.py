@@ -2596,7 +2596,7 @@ REGISTRATION_EXTRA_FIELDS = {
     'year_of_birth': 'optional',
     'mailing_address': 'optional',
     'goals': 'optional',
-    'honor_code': 'required',
+    'honor_code': 'hidden',
     'terms_of_service': 'hidden',
     'city': 'hidden',
     'country': 'hidden',

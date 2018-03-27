@@ -21,7 +21,7 @@ function($, _, AbstractEditor, FileUpload, UploadDialog) {
         events: {
             'click .setting-clear': 'clear',
             'click .create-setting': 'addEntry',
-            'click .remove-setting': 'removeEntry',
+            'click .remove-setting': 'deleteTranscript',
             'click .upload-setting': 'upload',
             'change select': 'onChangeHandler'
         },
@@ -137,12 +137,24 @@ function($, _, AbstractEditor, FileUpload, UploadDialog) {
         },
 
         removeEntry: function(event) {
-            event.preventDefault();
-
             var entry = $(event.currentTarget).data('lang');
             this.setValueInEditor(_.omit(this.model.get('value'), entry));
             this.updateModel();
             this.$el.find('.create-setting').removeClass('is-disabled').attr('aria-disabled', false);
+        },
+
+        deleteTranscript: function(event) {
+            var self = this,
+                lang = $(event.currentTarget).data('lang');
+
+            event.preventDefault();
+
+            return $.ajax({
+                url: self.model.get('urlRoot') + '/' + lang,
+                type: 'DELETE'
+            }).done(function() {
+                self.removeEntry(event);
+            });
         },
 
         upload: function(event) {

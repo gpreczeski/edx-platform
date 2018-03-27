@@ -21,6 +21,7 @@ from xmodule.fields import RelativeTime
 from opaque_keys.edx.locator import CourseLocator
 
 from .transcripts_utils import (
+    clean_video_id,
     convert_video_transcript,
     get_or_create_sjson,
     generate_sjson_for_all_speeds,
@@ -37,6 +38,7 @@ from .transcripts_utils import (
 from .transcripts_model_utils import (
     is_val_transcript_feature_enabled_for_course
 )
+from edxval import api as edxval_api
 
 log = logging.getLogger(__name__)
 
@@ -418,7 +420,16 @@ class VideoStudioViewHandlers(object):
                 log.info("Invalid /translation request: no language.")
                 return Response(status=400)
 
-            if request.method == 'POST':
+            if request.method == 'DELETE':
+                response = Response(status=200)
+
+                edx_video_id = clean_video_id(self.edx_video_id)
+                if edx_video_id:
+                    edxval_api.delete_video_transcript(video_id=self.edx_video_id, language_code=language)
+
+                return response
+
+            elif request.method == 'POST':
                 subtitles = request.POST['file']
                 try:
                     file_data = subtitles.file.read()
